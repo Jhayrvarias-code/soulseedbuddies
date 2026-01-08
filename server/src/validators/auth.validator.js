@@ -41,9 +41,9 @@ const registerValidator = [
     .isISO8601()
     .withMessage("Birthdate must be a valid date"),
 
-  body("gender").optional().isIn(["male", "female", "other"]),
+  body("gender").notEmpty().isIn(["male", "female", "other"]),
 
-  body("lookingFor").optional().isIn(["male", "female", "other"]),
+  body("lookingFor").notEmpty().isIn(["male", "female", "other"]),
 ];
 
 const loginValidator = [

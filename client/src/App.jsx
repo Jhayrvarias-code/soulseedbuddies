@@ -25,7 +25,7 @@ function App() {
         <h1 className="text-4xl font-bold text-gray-800 mb-4">
           Soul Seed Buddies
         </h1>
-        <p className="text-gray-600 mb-6">Welcome to your application</p>
+        <p className="text-gray-600 mb-6">welcome</p>
         <nav className="flex gap-4">
           <a
             href="/login"

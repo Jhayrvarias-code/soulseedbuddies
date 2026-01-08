@@ -10,6 +10,7 @@ const testRouter = require("./routes/test");
 const likeRoutes = require("./routes/like.route");
 const matchRoutes = require("./routes/match.route");
 const messageRoutes = require("./routes/message.route");
+const discoverRoutes = require("./routes/discover.route");
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/likes", likeRoutes);
 app.use("/api/matches", matchRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/discover", discoverRoutes);
 
 // console.log("userRoutes:", userRoutes);
 
