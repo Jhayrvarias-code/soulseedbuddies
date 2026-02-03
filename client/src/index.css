@@ -1,7 +1,9 @@
+/* @import "/client/tailwind.config.js"; */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+@tailwind variants
+/* @plugin "tailwindcss-animate"; */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -71,8 +73,6 @@ button:focus-visible {
   }
 } */
 
-
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -128,8 +128,6 @@ button:focus-visible {
     --chart-5: 340 75% 55%;
   }
 }
-
-
 
 @layer base {
   * {

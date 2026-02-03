@@ -1,47 +1,106 @@
-import "./App.css";
-import { useEffect } from "react";
+import { lazy, Suspense } from "react";
+import { Outlet } from "react-router-dom";
+import "./index.css";
+
+// Layouts
+import AppLayout from "./layouts/AppLayout";
+import AuthLayout from "./layouts/AuthLayout";
+
+// Route Guards
+import ProtectedRoute from "./routes/ProtectedRoutes";
+import AuthRoute from "./routes/AuthRoute";
+
+// import { BASE_URL } from "@/api/axios";
+
+// Pages
+import ErrorPage from "./pages/ErrorPage";
+
+// 🔹 Lazy-loaded pages
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Landing = lazy(() => import("./pages/landingPage"));
+
+// 🔹 Router configuration
+
+import { AuthProvider } from "./context/AuthContext";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import PublicLayout from "./layouts/publicLayout";
 
 function App() {
-  useEffect(() => {
-    // Call the backend test endpoint to confirm server + MongoDB status
-    fetch("http://localhost:3000/api/test")
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Backend test response:", data);
-        if (data && data.db && data.db.status === "connected") {
-          console.log("Frontend: Backend reports MongoDB is connected.");
-        } else {
-          console.warn("Frontend: Backend reports MongoDB is NOT connected.");
-        }
-      })
-      .catch((err) =>
-        console.error("Failed to reach backend test endpoint:", err)
-      );
-  }, []);
+  const router = createBrowserRouter([
+    {
+      element: <Outlet />,
+      errorElement: <ErrorPage />,
+      children: [
+        {
+          path: "/",
+          element: <PublicLayout />,
+          children: [
+            {
+              index: true,
+              element: (
+                <Suspense fallback="Loading...">
+                  <Landing />
+                </Suspense>
+              ),
+            },
+          ],
+        },
+
+        {
+          element: <AuthRoute />,
+          children: [
+            {
+              element: <AuthLayout />,
+              children: [
+                {
+                  path: "/login",
+                  element: (
+                    <Suspense fallback="Loading login...">
+                      <Login />
+                    </Suspense>
+                  ),
+                },
+                {
+                  path: "/register",
+                  element: (
+                    <Suspense fallback="Loading register...">
+                      <Register />
+                    </Suspense>
+                  ),
+                },
+              ],
+            },
+          ],
+        },
+
+        {
+          element: <ProtectedRoute />,
+          children: [
+            {
+              element: <AppLayout />,
+              children: [
+                {
+                  path: "/dashboard",
+                  element: (
+                    <Suspense fallback="Loading dashboard...">
+                      <Dashboard />
+                    </Suspense>
+                  ),
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <div className="bg-white p-8 rounded-lg shadow-lg text-center">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">
-          Soul Seed Buddies
-        </h1>
-        <p className="text-gray-600 mb-6">welcome</p>
-        <nav className="flex gap-4">
-          <a
-            href="/login"
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-          >
-            Login
-          </a>
-          <a
-            href="/register"
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-          >
-            Register
-          </a>
-        </nav>
-      </div>
-    </div>
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   );
 }
 

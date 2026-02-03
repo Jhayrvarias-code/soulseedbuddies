@@ -7,16 +7,16 @@ const { likeUser } = require("../services/like.service");
  */
 const like = async (req, res, next) => {
   try {
-    // 1️⃣ Logged-in user (from auth middleware)
+    // Logged-in user (from auth middleware)
     const fromUserId = req.user.id;
 
-    // 2️⃣ Target user (from URL)
+    // Target user (from URL)
     const toUserId = req.params.userId;
 
-    // 3️⃣ Call service
+    // Call service
     const result = await likeUser(fromUserId, toUserId);
 
-    // 4️⃣ Respond
+    // Respond
     if (result.matched) {
       return res.status(201).json({
         success: true,

@@ -23,9 +23,10 @@ const matchSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
+// Prevent duplicate match
 matchSchema.index({ "users.0": 1, "users.1": 1 }, { unique: true });
 
 module.exports = mongoose.model("Match", matchSchema);
