@@ -23,8 +23,8 @@ export default function UserCard({ user, onLike, onDislike }) {
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className="cursor-grab active:cursor-grabbing"
     >
-      <Card className="flex items-center justify-center w-full max-w-sm shadow-lg">
-        <CardContent className="p-4 space-y-4">
+      <Card className="inline-block w-full h-full max-w-sm shadow-lg">
+        <CardContent className="flex flex-col p-40 space-y-4 text-center items-center justify-center">
           <Avatar className="w-24 h-24 mx-auto mb-4">
             <AvatarFallback>{user.firstName[0]}</AvatarFallback>
           </Avatar>

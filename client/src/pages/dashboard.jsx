@@ -1,115 +1,141 @@
-import { useEffect, useState } from "react";
-import {
-  fetchDiscoverUsers,
-  fetchMatches,
-  likeUser,
-  unmatchUser,
-  userProfile,
-} from "../api/api";
+import { AnimatePresence } from "framer-motion";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchDiscoverUsers, fetchMatches, likeUser, unmatchUser } from "../api/api";
 import UserCard from "@/components/dashboard/userCard";
 import { Button } from "@/components/ui/button";
-import { AnimatePresence } from "framer-motion";
 
 export default function Dashboard() {
-  const [users, setUsers] = useState([]);
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  // Fetch discover users and matches
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [discoverRes, matchesRes] = await Promise.all([
-          fetchDiscoverUsers(),
-          fetchMatches(),
-        ]);
+  // 🔹 Fetch discover users
+  const {
+    data: discoverData = [],
+    isLoading: discoverLoading,
+    isError: discoverError,
+  } = useQuery({
+    queryKey: ["discover"],
+    queryFn: async () => {
+      const res = await fetchDiscoverUsers();
+      return res.data.users;
+    },
+  });
 
-        setUsers(discoverRes?.data?.users || []);
-        setMatches(matchesRes?.data?.matches || []);
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-        setUsers([]);
-        setMatches([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // 🔹 Fetch matches
+  const {
+    data: matchesData = [],
+    isLoading: matchesLoading,
+    isError: matchesError,
+  } = useQuery({
+    queryKey: ["matches"],
+    queryFn: async () => {
+      const res = await fetchMatches();
+      return res.data.matches;
+    },
+  });
 
-    fetchData();
-  }, []);
+  // 🔹 Like mutation with optimistic update
+  const likeMutation = useMutation({
+    mutationFn: (userId) => likeUser(userId),
 
-  // user
-  const profile = async (userId) => {
-    try {
-      await userProfile(userId);
-    } catch (err) {
-      console.error("Error user profile:", err);
-    }
-  };
-  // Like a user
-  const handleLike = async (userId) => {
-    try {
-      await likeUser(userId);
-      setUsers((prev) => prev.filter((u) => u._id !== userId)); // remove liked user
-    } catch (err) {
-      console.error("Error liking user:", err);
-    }
-  };
+    onMutate: async (userId) => {
+      await queryClient.cancelQueries({ queryKey: ["discover"] });
+      const previousUsers = queryClient.getQueryData(["discover"]);
 
-  // Unmatch a user
-  const handleUnmatch = async (matchId) => {
-    try {
-      await unmatchUser(matchId);
-      setMatches((prev) => prev.filter((m) => m._id !== matchId)); // remove unmatched
-    } catch (err) {
-      console.error("Error unmatching user:", err);
-    }
-  };
+      queryClient.setQueryData(["discover"], (old = []) =>
+        old.filter((u) => u._id !== userId)
+      );
 
-  if (loading)
+      return { previousUsers };
+    },
+
+    onError: (err, userId, context) => {
+      alert("Could not like user. Try again.");
+      queryClient.setQueryData(["discover"], context.previousUsers);
+    },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matches"] });
+    },
+  });
+
+  // 🔹 Unmatch mutation
+  const unmatchMutation = useMutation({
+    mutationFn: (matchId) => unmatchUser(matchId),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matches"] });
+      alert("User removed from matches");
+    },
+
+    onError: () => {
+      alert("Could not unmatch user. Try again.");
+    },
+  });
+
+  // 🔹 Loading state
+  if (discoverLoading || matchesLoading) {
     return <div className="text-center mt-10">Loading dashboard...</div>;
+  }
+
+  if (discoverError || matchesError) {
+    return (
+      <div className="text-center mt-10 text-red-500">
+        Error loading dashboard. Please try again later.
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-8">
+      {/* Discover Section */}
       <h1 className="text-3xl font-bold">Discover</h1>
-
-      <div className="flex justify-center items-center min-h-[300px]">
+      <div className="flex justify-center items-center min-h-[300px] relative">
         <AnimatePresence>
-          {users.length === 0 ? (
-            <p className="text-muted-foreground ">No users left to discover</p>
+          {discoverData.length === 0 ? (
+            <p className="text-muted-foreground">No users left to discover</p>
           ) : (
-            <UserCard
-              key={users[0]._id}
-              user={users[0]}
-              onLike={handleLike}
-              onDislike={(userId) =>
-                setUsers((prev) => prev.filter((u) => u._id !== userId))
-              }
-            />
+            discoverData.slice(0, 1).map((user, index) => (
+              <UserCard
+                key={user._id}
+                user={user}
+                onLike={(id) => likeMutation.mutate(id)}
+                onDislike={(id) =>
+                  queryClient.setQueryData(["discover"], (old = []) =>
+                    old.filter((u) => u._id !== id)
+                  )
+                }
+                style={{
+                  zIndex: 10 - index,
+                  scale: 1 - index * 0.05,
+                  y: index * 10,
+                  position: index === 0 ? "relative" : "absolute",
+                }}
+              />
+            ))
           )}
         </AnimatePresence>
       </div>
 
-      {/* <section>
+      {/* Matches Section */}
+      <section>
         <h2 className="text-2xl font-semibold mt-10">Matches</h2>
 
-        {matches.length === 0 ? (
+        {matchesData.length === 0 ? (
           <p className="text-muted-foreground">No matches yet</p>
         ) : (
-          matches.map((match) => (
-            <div key={match._id} className="flex justify-between mt-2">
+          matchesData.map((match) => (
+            <div key={match._id} className="flex justify-between mt-2 items-center">
               <span>{match.users.join(", ")}</span>
               <Button
                 variant="destructive"
-                onClick={() => unmatchUser(match._id)}
+                onClick={() => unmatchMutation.mutate(match._id)}
               >
                 Unmatch
               </Button>
             </div>
           ))
         )}
-      </section> */}
+      </section>
     </div>
   );
 }
