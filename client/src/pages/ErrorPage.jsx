@@ -11,7 +11,7 @@ const ErrorPage = () => {
         {error?.statusText || error?.message || "Something went wrong."}
       </p>
       <Link
-        to="/"
+        to="/dashboard?active=true || /?active=false"
         className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
       >
         Go Home
